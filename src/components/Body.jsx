@@ -1,125 +1,130 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import 'react-lazy-load-image-component/src/effects/blur.css';
 import {
-    AppBar, Box, CssBaseline, Divider, Drawer,
-    IconButton, List, ListItem, ListItemButton,
-    ListItemIcon, ListItemText, Toolbar, Typography, Grid, Card, CardMedia, CardContent
+    Box,
+    Drawer,
+    List,
+    ListItem,
+    ListItemText,
+    Divider,
+    Grid,
+    Card,
+    CardMedia,
+    CardContent,
+    Typography
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
 
+import { LazyLoadImage } from 'react-lazy-load-image-component';
+
+// Width when drawer is expanded
 const drawerWidth = 240;
 
-function Body({ window, drawerOpen, toggleDrawer }) {
+function Body({ drawerOpen, toggleDrawer, selectedCategory, setSelectedCategory }) {
+    const [categories, setCategories] = useState([]);
+    const [products, setProducts] = useState([]);
 
-    const [mobileOpen, setMobileOpen] = React.useState(false);
+    // 🔁 Fetch categories from backend at component mount
+    useEffect(() => {
+        fetch('http://localhost:8080/api/products/categories')
+            .then(res => res.json())
+            .then(data => setCategories(['All', ...data])) // Add "All" for show-all option
+            .catch(err => console.error('Error fetching categories:', err));
+    }, []);
 
-    const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
-    };
+    // 🔁 Fetch products when selectedCategory changes
+    useEffect(() => {
+        const url =
+            selectedCategory === 'All'
+                ? 'http://localhost:8080/api/products'
+                : `http://localhost:8080/api/products/category/${selectedCategory}`;
 
-    const categories = ['All', 'Electronics', 'Clothing', 'Books', 'Accessories'];
-    const [selectedCategory, setSelectedCategory] = React.useState('All');
-
-    const products = [
-        { id: 1, name: 'Headphones', category: 'Electronics', image: 'https://via.placeholder.com/150' },
-        { id: 2, name: 'T-Shirt', category: 'Clothing', image: 'https://via.placeholder.com/150' },
-        { id: 3, name: 'Book: React', category: 'Books', image: 'https://via.placeholder.com/150' },
-        { id: 4, name: 'Camera', category: 'Electronics', image: 'https://via.placeholder.com/150' },
-        { id: 5, name: 'Sunglasses', category: 'Accessories', image: 'https://via.placeholder.com/150' },
-        { id: 6, name: 'Jacket', category: 'Clothing', image: 'https://via.placeholder.com/150' },
-        { id: 7, name: 'Power Bank', category: 'Electronics', image: 'https://via.placeholder.com/150' },
-        { id: 8, name: 'Notebook', category: 'Books', image: 'https://via.placeholder.com/150' },
-        { id: 9, name: 'Backpack', category: 'Accessories', image: 'https://via.placeholder.com/150' },
-    ];
-
-
-    const filteredProducts = selectedCategory === 'All'
-        ? products
-        : products.filter(product => product.category === selectedCategory);
-
-
-    const drawer = (
-        <div>
-            <Toolbar />
-            <Divider />
-            <List>
-                {categories.map((text) => (
-                    <ListItem key={text} disablePadding>
-                        <ListItemButton onClick={() => setSelectedCategory(text)}>
-                            <ListItemIcon>
-                                <InboxIcon />
-                            </ListItemIcon>
-                            <ListItemText primary={text} />
-                        </ListItemButton>
-                    </ListItem>
-                ))}
-            </List>
-        </div>
-    );
-
-    const container = window !== undefined ? () => window().document.body : undefined;
+        fetch(url)
+            .then(res => res.json())
+            .then(data => setProducts(data))
+            .catch(err => console.error('Error fetching products:', err));
+    }, [selectedCategory]);
 
     return (
         <Box sx={{ display: 'flex' }}>
-            <CssBaseline />
+            {/* Sidebar */}
+            <Drawer
+                variant="persistent"
+                anchor="left"
+                open={drawerOpen}
+                sx={{
+                    width: drawerOpen ? drawerWidth : 0,
+                    flexShrink: 0,
+                    '& .MuiDrawer-paper': {
+                        width: drawerWidth,
+                        boxSizing: 'border-box',
+                        transition: 'width 0.3s ease',
+                        overflowX: 'hidden',
+                    },
+                }}
+            >
+                <Divider />
+                <List>
+                    {/* "All" button at the top */}
+                    <ListItem
+                        button
+                        onClick={() => setSelectedCategory('All')}
+                        selected={selectedCategory === 'All'}
+                    >
+                        <ListItemText primary="All" />
+                    </ListItem>
 
-            {/* Drawer */}
-            <Box component="nav" sx={{ width: { sm: 240 }, flexShrink: { sm: 0 } }}>
-                <Drawer
-                    variant="temporary"
-                    open={drawerOpen}
-                    onClose={toggleDrawer}
-                    ModalProps={{ keepMounted: true }}
-                    sx={{
-                        display: { xs: 'block', sm: 'none' },
-                        '& .MuiDrawer-paper': { width: 240 },
-                    }}
-                >
-                    {drawer}
-                </Drawer>
-                <Drawer
-                    variant="permanent"
-                    open
-                    sx={{
-                        display: { xs: 'none', sm: 'block' },
-                        '& .MuiDrawer-paper': { width: 240 },
-                    }}
-                >
-                    {drawer}
-                </Drawer>
-            </Box>
+                    {/* Dynamically render remaining categories */}
+                    {categories.map((category, index) => (
+                        <ListItem
+                            button
+                            key={index}
+                            onClick={() => setSelectedCategory(category)}
+                            selected={selectedCategory === category}
+                        >
+                            <ListItemText primary={category} />
+                        </ListItem>
+                    ))}
+                </List>
+            </Drawer>
 
-            {/* Main content (product grid, etc.) */}
-            <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - 240px)` } }}>
-                <Toolbar />
-                <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-                    <Toolbar />
-                    <Grid container spacing={2}>
-                        {products.map((product) => (
-                            <Grid item xs={12} sm={6} md={4} key={product.id}>
-                                <Card>
-                                    <CardMedia
-                                        component="img"
-                                        height="140"
-                                        image={product.image}
-                                        alt={product.name}
-                                    />
-                                    <CardContent>
-                                        <Typography variant="h6">{product.name}</Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Category: {product.category}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+            {/* Main content area */}
+            <Box
+                component="main"
+                sx={{
+                    flexGrow: 1,
+                    p: 3,
+                    width: drawerOpen ? `calc(100% - ${drawerWidth}px)` : '100%',
+                    transition: 'width 0.3s ease',
+                }}
+            >
+                <Grid container spacing={3}>
+                    {/* Render product cards */}
+                    {products.map((product) => (
+                        <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+                            <Card>
+                                <LazyLoadImage
+                                    alt={product.name}
+                                    src={product.imageUrl}
+                                    effect="blur"
+                                    width="100%"
+                                    height="140px"
+                                    style={{ objectFit: 'cover' }}
+                                />
+
+                                <CardContent>
+                                    <Typography variant="h6">{product.name}</Typography>
+                                    <Typography variant="body2">{product.description}</Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Category: {product.category}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    ))}
+                </Grid>
             </Box>
         </Box>
     );
-
-
 }
 
 export default Body;
