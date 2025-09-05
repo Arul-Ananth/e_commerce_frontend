@@ -1,46 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
     Box,
     Button,
     TextField,
     Typography,
     Paper,
-} from '@mui/material';
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import apiService from "../api/ApiService.jsx";
 
 function SignUp() {
     const [formData, setFormData] = useState({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        phone: '',
-        captcha: '',
+        email: "",
+        password: "",
+        confirmPassword: "",
+        phone: "",
+        captcha: "",
     });
+
+    const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             [name]: value,
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // TODO: Add validation, captcha check, and submit logic
-        console.log('Submitted:', formData);
+        setError("");
+
+        // ✅ simple validations
+        if (formData.password !== formData.confirmPassword) {
+            setError("Passwords do not match.");
+            return;
+        }
+        if (formData.captcha !== "1234") {
+            setError("Invalid captcha. Please enter 1234 for demo.");
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            await apiService.signup({
+                email: formData.email,
+                password: formData.password,
+                phone: formData.phone,
+            });
+
+            alert("Signup successful! Please login.");
+            navigate("/login");
+        } catch (err) {
+            console.error("Signup failed:", err);
+            setError("Signup failed. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
         <Box
             sx={{
-                height: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: '#f4f6f8',
+                position: "fixed",
+                inset: 0,
+                zIndex: (theme) => theme.zIndex.appBar - 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "100vw",
+                height: "100vh",
+                overflowY: "auto",
+                bgcolor: "#f4f6f8",
             }}
         >
-            <Paper elevation={3} sx={{ p: 4, width: 350 }}>
+            <Paper elevation={3} sx={{ p: 4, width: 350, maxWidth: "90vw" }}>
                 <Typography variant="h5" align="center" gutterBottom>
                     Sign Up
                 </Typography>
@@ -94,18 +131,24 @@ function SignUp() {
                         value={formData.captcha}
                         onChange={handleChange}
                     />
-                    {/* Replace with real captcha image or plugin if needed */}
-                    <Typography variant="caption" sx={{ color: 'gray' }}>
+                    <Typography variant="caption" sx={{ color: "gray" }}>
                         Enter "1234" for demo
                     </Typography>
+
+                    {error && (
+                        <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                            {error}
+                        </Typography>
+                    )}
 
                     <Button
                         type="submit"
                         fullWidth
                         variant="contained"
                         sx={{ mt: 2 }}
+                        disabled={submitting}
                     >
-                        Sign Up
+                        {submitting ? "Signing up..." : "Sign Up"}
                     </Button>
                 </form>
             </Paper>
