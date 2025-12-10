@@ -11,10 +11,10 @@ import apiService from "../api/ApiService.jsx";
 
 function SignUp() {
     const [formData, setFormData] = useState({
+        username: "", // Changed from phone to username
         email: "",
         password: "",
         confirmPassword: "",
-        phone: "",
         captcha: "",
     });
 
@@ -34,7 +34,6 @@ function SignUp() {
         e.preventDefault();
         setError("");
 
-        // ✅ simple validations
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords do not match.");
             return;
@@ -46,10 +45,11 @@ function SignUp() {
 
         try {
             setSubmitting(true);
+            // Send username instead of phone
             await apiService.signup({
+                username: formData.username,
                 email: formData.email,
                 password: formData.password,
-                phone: formData.phone,
             });
 
             alert("Signup successful! Please login.");
@@ -83,6 +83,15 @@ function SignUp() {
                 </Typography>
                 <form onSubmit={handleSubmit}>
                     <TextField
+                        label="Username"
+                        name="username"
+                        fullWidth
+                        margin="normal"
+                        required
+                        value={formData.username}
+                        onChange={handleChange}
+                    />
+                    <TextField
                         label="Email"
                         name="email"
                         type="email"
@@ -110,16 +119,6 @@ function SignUp() {
                         margin="normal"
                         required
                         value={formData.confirmPassword}
-                        onChange={handleChange}
-                    />
-                    <TextField
-                        label="Phone Number"
-                        name="phone"
-                        type="tel"
-                        fullWidth
-                        margin="normal"
-                        required
-                        value={formData.phone}
                         onChange={handleChange}
                     />
                     <TextField

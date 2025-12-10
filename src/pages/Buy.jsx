@@ -36,6 +36,7 @@ export default function Buy() {
     const navigate = useNavigate();
     const { cartItems, updateQuantity, removeFromCart, clear, loading } = useCart();
     const { isAuthenticated } = useAuth();
+    
 
     const [placing, setPlacing] = useState(false);
     const [error, setError] = useState("");
